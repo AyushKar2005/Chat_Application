@@ -27,11 +27,17 @@ app.use('/api/messages', messageRoutes);
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-  // ✅ Express 5-compatible catch-all
-  app.get('/:path*', (_req, res) => {
+  // Final fallback: serve index.html for any non-API GET request.
+  // No path pattern => no path-to-regexp parsing => no crash.
+  app.use((req, res, next) => {
+    // Let API or non-GET requests fall through
+    if (req.method !== 'GET') return next();
+    if (req.path.startsWith('/api/')) return next();
+
     res.sendFile(path.join(__dirname, '../frontend', 'dist', 'index.html'));
   });
 }
+
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
